@@ -1,0 +1,99 @@
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterRoot = localProperties.getProperty('flutter.sdk')
+if (flutterRoot == null) {
+    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
+}
+
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+
+def flutterVersionName = localProperties.getProperty('flutter.versionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}
+
+def jksKeyPassword = System.getenv('ANDROID_JKS_KEY_PASSWORD')
+if (jksKeyPassword == null) {
+    jksKeyPassword = '12345678'
+    println('没有设置JKS钥密码的环境变量')
+}
+
+def jksStorePassword = System.getenv('ANDROID_JKS_STORE_PASSWORD')
+if (jksStorePassword == null) {
+    jksStorePassword = '12345678'
+    println('没有设置JKS库密码的环境变量')
+}
+
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+
+android {
+    compileSdkVersion flutter.compileSdkVersion
+    ndkVersion flutter.ndkVersion
+
+    defaultConfig {
+        applicationId "red.lilu.app.good_transport"
+        minSdkVersion 21
+        // 设置到30及以上时Golang会出网络异常 https://github.com/ipfs-shipyard/gomobile-ipfs/issues/68
+        targetSdkVersion 28
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+    }
+
+    signingConfigs {
+        lilu {
+            keyAlias 'lilu.red'
+            keyPassword "$jksKeyPassword"
+            storeFile file('lilu.red.jks')
+            storePassword "$jksStorePassword"
+        }
+    }
+
+    buildTypes {
+        release {
+            shrinkResources true
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.lilu
+            // 定义输出文件名称
+            // https://stackoverflow.com/a/55332662/4879713
+            android.applicationVariants.all {
+                variant ->
+                    variant.outputs.all {
+                        outputFileName = "good-transport.apk"
+                    }
+            }
+        }
+        debug {
+            signingConfig signingConfigs.lilu
+        }
+    }
+
+    buildFeatures {
+        viewBinding true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lintOptions {
+        // 忽略目标版本过低问题
+        checkReleaseBuilds false
+    }
+}
+
+flutter {
+    source '../..'
+}
