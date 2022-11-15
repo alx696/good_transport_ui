@@ -400,30 +400,43 @@ class _MyHomePageState extends State<MyHomePage> {
             // 参考 https://www.flutterbeads.com/flutter-widget-size-in-percentage/
             flex: 3,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text(
+                          '扫码或打开网址给我传东西',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                      _qrcode,
+                      Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text(
+                          _gatewayAddress,
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        icon: Icon(Icons.copy_rounded),
+                        label: Text("复制网址"),
+                        onPressed: () {
+                          FlutterClipboard.copy(_gatewayAddress)
+                              .then((value) => {EasyLoading.showToast('已经复制')});
+                        },
+                      ),
+                    ],
+                  ),
+                ),
                 Padding(
                   padding: EdgeInsets.all(16),
                   child: Text(
-                    '扫码或打开网址给我传东西',
+                    '打开网址 lilu.red 探索更多',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-                ),
-                _qrcode,
-                Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text(
-                    _gatewayAddress,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ),
-                OutlinedButton.icon(
-                  icon: Icon(Icons.copy_rounded),
-                  label: Text("复制网址"),
-                  onPressed: () {
-                    FlutterClipboard.copy(_gatewayAddress)
-                        .then((value) => {EasyLoading.showToast('已经复制')});
-                  },
                 ),
               ],
             ),
