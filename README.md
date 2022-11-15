@@ -7,7 +7,7 @@
 Android:
 
 ```
-ANDROID_JKS_KEY_PASSWORD=12345678 ANDROID_JKS_STORE_PASSWORD=12345678 flutter build apk  --debug
+flutter build apk  --debug
 ```
 
 > 软件报路径 `build/app/outputs/flutter-apk/app-debug.apk` . 在电视上测试发现按钮可以获得焦点, 但方向键的中键(进入)没有响应!
