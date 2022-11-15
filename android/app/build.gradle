@@ -23,14 +23,14 @@ if (flutterVersionName == null) {
 
 def jksKeyPassword = System.getenv('ANDROID_JKS_KEY_PASSWORD')
 if (jksKeyPassword == null) {
-    jksKeyPassword = '12345678'
-    println('没有设置JKS钥密码的环境变量')
+    jksKeyPassword = localProperties.getProperty('jks.key')
+    println('没有设置JKS钥密码的环境变量, 从配置文件中读取')
 }
 
 def jksStorePassword = System.getenv('ANDROID_JKS_STORE_PASSWORD')
 if (jksStorePassword == null) {
-    jksStorePassword = '12345678'
-    println('没有设置JKS库密码的环境变量')
+    jksStorePassword = localProperties.getProperty('jks.store')
+    println('没有设置JKS库密码的环境变量, 从配置文件中读取')
 }
 
 apply plugin: 'com.android.application'
