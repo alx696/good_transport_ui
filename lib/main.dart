@@ -105,7 +105,9 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: Icon(Icons.open_in_browser_rounded),
             label: Text('打开'),
             onPressed: () {
-              OpenAppFile.open(filePath);
+              OpenAppFile.open(filePath).then((result) {
+                l.fine('打开结果 ${result.message}');
+              });
             },
           ),
         );
