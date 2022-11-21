@@ -344,10 +344,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future test() async {
-    //
-  }
-
   @override
   void initState() {
     super.initState();
@@ -358,6 +354,48 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     bc = context;
+    var bodyChildren = [
+      Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              '扫码或打开网址给我传东西',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          _qrcode,
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              _gatewayAddress,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ),
+          OutlinedButton.icon(
+            icon: Icon(Icons.copy_rounded),
+            label: Text("复制网址"),
+            onPressed: () {
+              FlutterClipboard.copy(_gatewayAddress).then((value) => {EasyLoading.showToast('已经复制')});
+            },
+          ),
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              '打开网址 lilu.red 探索更多',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        ],
+      ),
+      Expanded(
+        child: ListView(
+          padding: EdgeInsets.all(8),
+          children: _cardList,
+        ),
+      ),
+    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -382,63 +420,20 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-      body: Row(
-        children: [
-          // 填充上级的空闲空间
-          Expanded(
-            // 实现填充上级的30%效果
-            // 参考 https://www.flutterbeads.com/flutter-widget-size-in-percentage/
-            flex: 3,
-            child: Column(
-              children: [
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text(
-                          '扫码或打开网址给我传东西',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ),
-                      _qrcode,
-                      Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text(
-                          _gatewayAddress,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      ),
-                      OutlinedButton.icon(
-                        icon: Icon(Icons.copy_rounded),
-                        label: Text("复制网址"),
-                        onPressed: () {
-                          FlutterClipboard.copy(_gatewayAddress).then((value) => {EasyLoading.showToast('已经复制')});
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text(
-                    '打开网址 lilu.red 探索更多',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            // 实现填充上级的70%效果
-            flex: 7,
-            child: ListView(
-              padding: EdgeInsets.all(8),
-              children: _cardList,
-            ),
-          ),
-        ],
+      body: OrientationBuilder(
+        builder: (buildContext, orientation) {
+          if (orientation == Orientation.portrait) {
+            l.fine('竖屏');
+            return Column(
+              children: bodyChildren,
+            );
+          }
+
+          l.fine('横屏');
+          return Row(
+            children: bodyChildren,
+          );
+        },
       ),
     );
   }
