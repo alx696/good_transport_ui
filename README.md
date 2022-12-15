@@ -2,6 +2,13 @@
 
 使用Flutter提供面向终端的应用.
 
+## 开发
+
+sqflite_common_ffi 需要安装依赖, [详见说明](https://pub.flutter-io.cn/packages/sqflite_common_ffi) .
+
+原生平台交互, [参考文档](https://flutter.cn/docs/development/platform-integration/platform-channels?tab=android-channel-java-tab)
+.
+
 ## 构建
 
 Android:

@@ -94,6 +94,11 @@ android {
     }
 }
 
+dependencies {
+    // 版本5等老系统中提供 java.util.concurrent.CompletableFuture 支持 (java9.util.concurrent.CompletableFuture)
+    implementation 'net.sourceforge.streamsupport:android-retrofuture:1.7.3'
+}
+
 flutter {
     source '../..'
 }

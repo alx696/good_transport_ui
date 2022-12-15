@@ -57,6 +57,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  static const platform = MethodChannel('app.lilu.red/flutter');
   late BuildContext bc;
   Widget _qrcode = Icon(
     Icons.qr_code_rounded,
@@ -67,6 +68,18 @@ class _MyHomePageState extends State<MyHomePage> {
   late String rootDirectoryPath;
   late Process httpServerProcess;
   late WebSocketChannel wc;
+
+  // 调用原生功能打开文件
+  Future _openFile(String filePath) async {
+    await platform.invokeMethod('open', {
+      'filePath': filePath,
+    });
+  }
+
+  // 调用原生功能获取文件夹
+  Future<String> _getDirectory() async {
+    return await platform.invokeMethod('getDirectory');
+  }
 
   /// 生成卡片数组
   List<Card> generateCardList({
@@ -105,9 +118,13 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: Icon(Icons.open_in_browser_rounded),
             label: Text('打开'),
             onPressed: () {
-              OpenAppFile.open(filePath).then((result) {
-                l.fine('打开结果 ${result.message}');
-              });
+              if (Platform.isAndroid) {
+                _openFile(filePath);
+              } else {
+                OpenAppFile.open(filePath).then((result) {
+                  l.fine('打开结果 ${result.message}');
+                });
+              }
             },
           ),
         );
@@ -118,7 +135,8 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: Icon(Icons.copy_rounded),
             label: Text('复制'),
             onPressed: () {
-              FlutterClipboard.copy(info.txt).then((value) => {EasyLoading.showToast('已经复制')});
+              FlutterClipboard.copy(info.txt)
+                  .then((value) => {EasyLoading.showToast('已经复制')});
             },
           ),
         );
@@ -196,7 +214,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future refresh() async {
     List<Info> dataList = await all();
-    _cardList = generateCardList(directoryPath: rootDirectoryPath, data: dataList);
+    _cardList =
+        generateCardList(directoryPath: rootDirectoryPath, data: dataList);
     setState(() {
       //
     });
@@ -205,8 +224,12 @@ class _MyHomePageState extends State<MyHomePage> {
   Future init() async {
     // 准备数据文件夹
     Directory documentDirectory = await getApplicationDocumentsDirectory();
-    l.config('文档文件夹: ${documentDirectory.path}');
     rootDirectoryPath = join(documentDirectory.path, '里路好传');
+    if (Platform.isAndroid) {
+      rootDirectoryPath = join(await _getDirectory(), '里路好传');
+    }
+
+    l.config('文件夹路径: $rootDirectoryPath');
     await Directory(rootDirectoryPath).create(recursive: true);
 
     // 初始化数据库
@@ -218,14 +241,17 @@ class _MyHomePageState extends State<MyHomePage> {
     var httpClient = HttpClient();
     try {
       // 准备模板文件
-      var templateFile = File(join(rootDirectoryPath, 'template', 'index.html'));
+      var templateFile =
+          File(join(rootDirectoryPath, 'template', 'index.html'));
       if (templateFile.existsSync()) {
         templateFile.deleteSync();
       }
       templateFile.createSync(recursive: true);
-      var templateFileData = await rootBundle.load('service/template/index.html');
+      var templateFileData =
+          await rootBundle.load('service/template/index.html');
       var templateFileDataBuffer = templateFileData.buffer;
-      templateFile.writeAsBytesSync(templateFileDataBuffer.asUint8List(templateFileData.offsetInBytes, templateFileData.lengthInBytes));
+      templateFile.writeAsBytesSync(templateFileDataBuffer.asUint8List(
+          templateFileData.offsetInBytes, templateFileData.lengthInBytes));
 
       // 准备服务文件
       var serverFilename = 'gts-amd64';
@@ -240,9 +266,11 @@ class _MyHomePageState extends State<MyHomePage> {
         serverFile.deleteSync();
       }
       serverFile.createSync(recursive: true);
-      var serverFileData = await rootBundle.load(join('service', serverFilename));
+      var serverFileData =
+          await rootBundle.load(join('service', serverFilename));
       var serverFileDataBuffer = serverFileData.buffer;
-      serverFile.writeAsBytesSync(serverFileDataBuffer.asUint8List(serverFileData.offsetInBytes, serverFileData.lengthInBytes));
+      serverFile.writeAsBytesSync(serverFileDataBuffer.asUint8List(
+          serverFileData.offsetInBytes, serverFileData.lengthInBytes));
       // TODO 其它平台需要测试是否需要?
       if (Platform.isLinux || Platform.isAndroid) {
         // Linux , Android平台授予执行权限
@@ -252,7 +280,8 @@ class _MyHomePageState extends State<MyHomePage> {
       }
 
       // 启动HTTP服务
-      httpServerProcess = await Process.start(serverFile.path, ['--d=$rootDirectoryPath']);
+      httpServerProcess =
+          await Process.start(serverFile.path, ['--d=$rootDirectoryPath']);
       httpServerProcess.stdout.transform(utf8.decoder).forEach((txt) {
         l.fine(txt);
       });
@@ -272,9 +301,11 @@ class _MyHomePageState extends State<MyHomePage> {
       l.fine('HTTP服务端口: $portText');
 
       // 获取服务信息
-      var httpRequest = await httpClient.get('localhost', int.parse(portText), '/server/info');
+      var httpRequest = await httpClient.get(
+          'localhost', int.parse(portText), '/server/info');
       var httpResponse = await httpRequest.close();
-      var serverInfoMap = jsonDecode(await httpResponse.transform(utf8.decoder).join());
+      var serverInfoMap =
+          jsonDecode(await httpResponse.transform(utf8.decoder).join());
       l.fine('服务器信息 $serverInfoMap');
       var httpAddress = serverInfoMap['http_address'];
       _gatewayAddress = 'http://$httpAddress';
@@ -297,7 +328,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
           if (pushMap['c'] == '上传开始') {
             Map<String, dynamic> textMap = jsonDecode(pushMap['t']!);
-            insert(Info(textMap['id']!, textMap['name']!, textMap['size']!, textMap['id']!, 0));
+            insert(Info(textMap['id']!, textMap['name']!, textMap['size']!,
+                textMap['id']!, 0));
             refresh();
             return;
           }
@@ -320,7 +352,8 @@ class _MyHomePageState extends State<MyHomePage> {
       wc.sink.add('开始订阅');
 
       // 生成网址二维码
-      httpRequest = await httpClient.get('localhost', int.parse(portText), '/qrcode?name=http.jpg&text=$_gatewayAddress');
+      httpRequest = await httpClient.get('localhost', int.parse(portText),
+          '/qrcode?name=http.jpg&text=$_gatewayAddress');
       httpResponse = await httpRequest.close();
       var qrcodePath = await httpResponse.transform(utf8.decoder).join();
       _qrcode = Image.file(
@@ -377,7 +410,8 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: Icon(Icons.copy_rounded),
             label: Text("复制网址"),
             onPressed: () {
-              FlutterClipboard.copy(_gatewayAddress).then((value) => {EasyLoading.showToast('已经复制')});
+              FlutterClipboard.copy(_gatewayAddress)
+                  .then((value) => {EasyLoading.showToast('已经复制')});
             },
           ),
           Padding(
