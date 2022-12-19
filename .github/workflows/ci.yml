@@ -130,6 +130,7 @@ jobs:
         run: |
           cd service
           tar zxf template.tar.gz
+          rm template.tar.gz
           ls
           cd ..
 
