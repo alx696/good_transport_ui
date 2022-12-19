@@ -335,9 +335,25 @@ class _MyHomePageState extends State<MyHomePage> {
         l.fine('HTTP服务程序授予执行权限结果: ${result.stdout} ${result.stderr}');
       }
 
+      // 确定HTTP服务的端口
+      int httpPort;
+      var portFile = File(join(rootDirectoryPath, 'port.txt'));
+      if (!portFile.existsSync()) {
+        // 获取可用端口
+        var freeSocket = await ServerSocket.bind('localhost', 0);
+        httpPort = freeSocket.port;
+        freeSocket.close();
+        // 保存
+        portFile.createSync();
+        portFile.writeAsStringSync('$httpPort');
+      } else {
+        httpPort = int.parse(portFile.readAsStringSync());
+      }
+      l.fine('HTTP端口:$httpPort');
+
       // 启动HTTP服务
-      httpServerProcess =
-          await Process.start(serverFile.path, ['--d=$rootDirectoryPath']);
+      httpServerProcess = await Process.start(
+          serverFile.path, ['--d=$rootDirectoryPath', '--p=$httpPort']);
       httpServerProcess.stdout.transform(utf8.decoder).forEach((txt) {
         l.fine(txt);
       });
@@ -345,20 +361,9 @@ class _MyHomePageState extends State<MyHomePage> {
         l.warning(txt);
       });
 
-      // 获取端口信息
-      var portFile = File(join(rootDirectoryPath, 'port.txt'));
-      while (!portFile.existsSync()) {
-        l.fine('没有找到端口文件, HTTP服务没有就绪');
-        await Future.delayed(Duration(seconds: 1), () {
-          l.fine('再次检查端口文件是否存在');
-        });
-      }
-      var portText = portFile.readAsStringSync();
-      l.fine('HTTP服务端口: $portText');
-
       // 获取服务信息
-      var httpRequest = await httpClient.get(
-          'localhost', int.parse(portText), '/server/info');
+      var httpRequest =
+          await httpClient.get('localhost', httpPort, '/server/info');
       var httpResponse = await httpRequest.close();
       var serverInfoMap =
           jsonDecode(await httpResponse.transform(utf8.decoder).join());
@@ -408,8 +413,8 @@ class _MyHomePageState extends State<MyHomePage> {
       wc.sink.add('开始订阅');
 
       // 生成网址二维码
-      httpRequest = await httpClient.get('localhost', int.parse(portText),
-          '/qrcode?name=http.jpg&text=$_gatewayAddress');
+      httpRequest = await httpClient.get(
+          'localhost', httpPort, '/qrcode?name=http.jpg&text=$_gatewayAddress');
       httpResponse = await httpRequest.close();
       var qrcodePath = await httpResponse.transform(utf8.decoder).join();
       _qrcode = Image.file(
@@ -530,6 +535,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void dispose() {
+    l.fine('销毁');
     httpServerProcess.kill();
     wc.sink.close();
     closeDb();
