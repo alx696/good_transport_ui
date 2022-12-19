@@ -49,7 +49,7 @@ jobs:
           mkdir gts
           cd gts
           wget https://github.com/alx696/good-transport-server/releases/download/v1.0/gts-android_arm64
-          wget https://github.com/alx696/good-transport-server/releases/download/v1.0/gts-amd64
+          wget https://github.com/alx696/good-transport-server/releases/download/v1.0/gts-linux-64
           ls
           cd ..
           cd service
@@ -70,12 +70,12 @@ jobs:
           ANDROID_JKS_STORE_PASSWORD: ${{ secrets.ANDROID_JKS_STORE_PASSWORD }}
         run: |
           echo "构建Linux"
-          mv gts/gts-amd64 service/
+          mv gts/gts-linux-64 service/
           flutter build linux --release
           mv build/linux/x64/release/bundle good-transport
           tar zcf good-transport-ubuntu.tar.gz good-transport
           rm -rf good-transport
-          rm service/gts-amd64
+          rm service/gts-linux-64
           mkdir _public
           mv good-transport-ubuntu.tar.gz _public
           echo "构建Android"
@@ -117,7 +117,7 @@ jobs:
         id: download-file
         uses: carlosperate/download-file-action@v2
         with:
-          file-url: 'https://github.com/alx696/good-transport-server/releases/download/v1.0/gts-amd64.exe'
+          file-url: 'https://github.com/alx696/good-transport-server/releases/download/v1.0/gts-windows-64.exe'
           location: './service'
 
       - name: download-server-template

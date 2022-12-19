@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:clipboard/clipboard.dart';
+import 'package:dpad_container/dpad_container.dart';
 import 'package:filesize/filesize.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +14,10 @@ import 'package:logging/logging.dart';
 import 'package:open_app_file/open_app_file.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:system_info2/system_info2.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+
+// TODO dpad_container 初步支持了电视遥控, 但是效果不理想, 比如获得焦点后没有高亮效果.
 
 final l = Logger('调试');
 const title = '里路好传';
@@ -69,16 +73,46 @@ class _MyHomePageState extends State<MyHomePage> {
   late Process httpServerProcess;
   late WebSocketChannel wc;
 
+  // 调用原生功能获取文件夹
+  Future<String> _getDirectory() async {
+    return await platform.invokeMethod('getDirectory');
+  }
+
   // 调用原生功能打开文件
-  Future _openFile(String filePath) async {
+  Future _platformOpenFile(String filePath) async {
     await platform.invokeMethod('open', {
       'filePath': filePath,
     });
   }
 
-  // 调用原生功能获取文件夹
-  Future<String> _getDirectory() async {
-    return await platform.invokeMethod('getDirectory');
+  // 打开文件
+  _openFile(String filePath) {
+    if (Platform.isAndroid) {
+      _platformOpenFile(filePath);
+      return;
+    }
+
+    OpenAppFile.open(filePath).then((result) {
+      l.fine('打开结果 ${result.message}');
+    });
+  }
+
+  // 删除Card
+  _deleteCard(String uuid, String filePath) {
+    // 删除文件
+    if (filePath != '') {
+      File(filePath).delete();
+    }
+    // 删除数据
+    delete(uuid);
+    // 刷新数据
+    refresh();
+  }
+
+  // 复制文本
+  _copyText(String text) {
+    FlutterClipboard.copy(text)
+        .then((value) => {EasyLoading.showToast('已经复制')});
   }
 
   /// 生成卡片数组
@@ -111,32 +145,41 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
         );
-      } else if (info.path != '') {
+      } else if (filePath != '') {
         // 显示打开按钮
         actionArray.add(
-          ElevatedButton.icon(
-            icon: Icon(Icons.open_in_browser_rounded),
-            label: Text('打开'),
-            onPressed: () {
-              if (Platform.isAndroid) {
+          DpadContainer(
+            child: ElevatedButton.icon(
+              icon: Icon(Icons.open_in_browser_rounded),
+              label: Text('打开'),
+              onPressed: () {
                 _openFile(filePath);
-              } else {
-                OpenAppFile.open(filePath).then((result) {
-                  l.fine('打开结果 ${result.message}');
-                });
-              }
+              },
+            ),
+            onClick: () {
+              _openFile(filePath);
+            },
+            onFocus: (hasFocus) {
+              l.fine('焦点变化: $hasFocus');
             },
           ),
         );
       } else {
         // 显示复制按钮
         actionArray.add(
-          ElevatedButton.icon(
-            icon: Icon(Icons.copy_rounded),
-            label: Text('复制'),
-            onPressed: () {
-              FlutterClipboard.copy(info.txt)
-                  .then((value) => {EasyLoading.showToast('已经复制')});
+          DpadContainer(
+            child: ElevatedButton.icon(
+              icon: Icon(Icons.copy_rounded),
+              label: Text('复制'),
+              onPressed: () {
+                _copyText(info.txt);
+              },
+            ),
+            onClick: () {
+              _copyText(info.txt);
+            },
+            onFocus: (hasFocus) {
+              l.fine('焦点变化: $hasFocus');
             },
           ),
         );
@@ -149,15 +192,19 @@ class _MyHomePageState extends State<MyHomePage> {
 
       // 添加删除按钮
       actionArray.add(
-        OutlinedButton.icon(
-          icon: Icon(Icons.delete_forever_rounded),
-          label: Text("删除"),
-          onPressed: () {
-            if (filePath != '') {
-              File(filePath).delete();
-            }
-            delete(info.uuid);
-            refresh();
+        DpadContainer(
+          child: OutlinedButton.icon(
+            icon: Icon(Icons.delete_forever_rounded),
+            label: Text("删除"),
+            onPressed: () {
+              _deleteCard(info.uuid, filePath);
+            },
+          ),
+          onClick: () {
+            _deleteCard(info.uuid, filePath);
+          },
+          onFocus: (hasFocus) {
+            l.fine('焦点变化: $hasFocus');
           },
         ),
       );
@@ -254,11 +301,20 @@ class _MyHomePageState extends State<MyHomePage> {
           templateFileData.offsetInBytes, templateFileData.lengthInBytes));
 
       // 准备服务文件
-      var serverFilename = 'gts-amd64';
+      l.fine('系统:${SysInfo.operatingSystemName}');
+      l.fine('架构:${SysInfo.kernelArchitecture}');
+      var serverFilename = 'gts-linux-64';
+      if (SysInfo.kernelArchitecture == "x86") {
+        serverFilename = 'gts-linux-32';
+      }
       if (Platform.isWindows) {
-        serverFilename = 'gts-amd64.exe';
+        serverFilename = 'gts-windows-64.exe';
       } else if (Platform.isAndroid) {
         serverFilename = 'gts-android_arm64';
+        // 支持x86 TV
+        if (SysInfo.kernelArchitecture == "i686") {
+          serverFilename = 'gts-linux-32';
+        }
       }
       l.fine('服务文件名称 $serverFilename');
       var serverFile = File(join(rootDirectoryPath, serverFilename));
@@ -271,7 +327,7 @@ class _MyHomePageState extends State<MyHomePage> {
       var serverFileDataBuffer = serverFileData.buffer;
       serverFile.writeAsBytesSync(serverFileDataBuffer.asUint8List(
           serverFileData.offsetInBytes, serverFileData.lengthInBytes));
-      // TODO 其它平台需要测试是否需要?
+      // TODO 其它平台需要测试是否需要
       if (Platform.isLinux || Platform.isAndroid) {
         // Linux , Android平台授予执行权限
         l.fine('HTTP服务程序授予执行权限');
