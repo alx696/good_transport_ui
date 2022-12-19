@@ -71,9 +71,8 @@ jobs:
         run: |
           echo "构建Linux"
           mv gts/gts-amd64 service/
-          flutter build linux --debug
-          ls build/linux/x64/debug/bundle
-          mv build/linux/x64/debug/bundle good-transport
+          flutter build linux --release
+          mv build/linux/x64/release/bundle good-transport
           tar zcf good-transport-ubuntu.tar.gz good-transport
           rm -rf good-transport
           rm service/gts-amd64
@@ -81,9 +80,8 @@ jobs:
           mv good-transport-ubuntu.tar.gz _public
           echo "构建Android"
           mv gts/gts-android_arm64 service/
-          flutter build apk --debug
-          ls build/app/outputs/flutter-apk
-          mv build/app/outputs/flutter-apk/app-debug.apk _public/good-transport.apk
+          flutter build apk --release
+          mv build/app/outputs/flutter-apk/app-release.apk _public/good-transport.apk
           echo "列出即将发布内容"
           ls _public
 
@@ -138,10 +136,9 @@ jobs:
       - name: build
         run: |
           echo "构建Windows"
-          flutter build windows --debug
-          ls build/windows/runner/Debug
+          flutter build windows --release
           mkdir _public
-          mv build/windows/runner/Debug _public/good-transport
+          mv build/windows/runner/Release _public/good-transport
           ls _public
 
       - name: zip
