@@ -111,8 +111,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // 复制文本
   _copyText(String text) {
-    FlutterClipboard.copy(text)
-        .then((value) => {EasyLoading.showToast('已经复制')});
+    FlutterClipboard.copy(text).then((value) => {EasyLoading.showToast('已经复制')});
   }
 
   /// 生成卡片数组
@@ -261,8 +260,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future refresh() async {
     List<Info> dataList = await all();
-    _cardList =
-        generateCardList(directoryPath: rootDirectoryPath, data: dataList);
+    _cardList = generateCardList(directoryPath: rootDirectoryPath, data: dataList);
     setState(() {
       //
     });
@@ -286,19 +284,17 @@ class _MyHomePageState extends State<MyHomePage> {
     refresh();
 
     var httpClient = HttpClient();
+    httpClient.idleTimeout = Duration(seconds: 3);
     try {
       // 准备模板文件
-      var templateFile =
-          File(join(rootDirectoryPath, 'template', 'index.html'));
+      var templateFile = File(join(rootDirectoryPath, 'template', 'index.html'));
       if (templateFile.existsSync()) {
         templateFile.deleteSync();
       }
       templateFile.createSync(recursive: true);
-      var templateFileData =
-          await rootBundle.load('service/template/index.html');
+      var templateFileData = await rootBundle.load('service/template/index.html');
       var templateFileDataBuffer = templateFileData.buffer;
-      templateFile.writeAsBytesSync(templateFileDataBuffer.asUint8List(
-          templateFileData.offsetInBytes, templateFileData.lengthInBytes));
+      templateFile.writeAsBytesSync(templateFileDataBuffer.asUint8List(templateFileData.offsetInBytes, templateFileData.lengthInBytes));
 
       // 准备服务文件
       l.fine('系统:${SysInfo.operatingSystemName}');
@@ -322,11 +318,9 @@ class _MyHomePageState extends State<MyHomePage> {
         serverFile.deleteSync();
       }
       serverFile.createSync(recursive: true);
-      var serverFileData =
-          await rootBundle.load(join('service', serverFilename));
+      var serverFileData = await rootBundle.load(join('service', serverFilename));
       var serverFileDataBuffer = serverFileData.buffer;
-      serverFile.writeAsBytesSync(serverFileDataBuffer.asUint8List(
-          serverFileData.offsetInBytes, serverFileData.lengthInBytes));
+      serverFile.writeAsBytesSync(serverFileDataBuffer.asUint8List(serverFileData.offsetInBytes, serverFileData.lengthInBytes));
       // TODO 其它平台需要测试是否需要
       if (Platform.isLinux || Platform.isAndroid) {
         // Linux , Android平台授予执行权限
@@ -337,7 +331,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
       // 确定HTTP服务的端口
       int httpPort;
-      var portFile = File(join(rootDirectoryPath, 'port.txt'));
+      var portFile = File(join(rootDirectoryPath, 'http-port.txt'));
       if (!portFile.existsSync()) {
         // 获取可用端口
         var freeSocket = await ServerSocket.bind('localhost', 0);
@@ -347,13 +341,13 @@ class _MyHomePageState extends State<MyHomePage> {
         portFile.createSync();
         portFile.writeAsStringSync('$httpPort');
       } else {
+        // 读取
         httpPort = int.parse(portFile.readAsStringSync());
       }
       l.fine('HTTP端口:$httpPort');
 
       // 启动HTTP服务
-      httpServerProcess = await Process.start(
-          serverFile.path, ['--d=$rootDirectoryPath', '--p=$httpPort']);
+      httpServerProcess = await Process.start(serverFile.path, ['--d=$rootDirectoryPath', '--p=$httpPort']);
       httpServerProcess.stdout.transform(utf8.decoder).forEach((txt) {
         l.fine(txt);
       });
@@ -362,13 +356,23 @@ class _MyHomePageState extends State<MyHomePage> {
       });
 
       // 获取服务信息
-      var httpRequest =
-          await httpClient.get('localhost', httpPort, '/server/info');
-      var httpResponse = await httpRequest.close();
-      var serverInfoMap =
-          jsonDecode(await httpResponse.transform(utf8.decoder).join());
-      l.fine('服务器信息 $serverInfoMap');
-      var httpAddress = serverInfoMap['http_address'];
+      String httpAddress = '';
+      while (httpAddress == '') {
+        // 间隔1秒连接1次直到连接成功
+        try {
+          var httpRequest = await httpClient.get('localhost', httpPort, '/server/info');
+          var httpResponse = await httpRequest.close();
+          if (httpResponse.statusCode == 200) {
+            final serverInfoMap = jsonDecode(await httpResponse.transform(utf8.decoder).join());
+            httpAddress = serverInfoMap['http_address'];
+          }
+        } catch (e) {
+          l.warning('获取服务器信息', e);
+
+          await Future.delayed(Duration(seconds: 1));
+        }
+      }
+      l.fine('HTTP地址:$httpAddress');
       _gatewayAddress = 'http://$httpAddress';
 
       // 订阅 https://flutter.cn/docs/cookbook/networking/web-sockets
@@ -389,8 +393,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
           if (pushMap['c'] == '上传开始') {
             Map<String, dynamic> textMap = jsonDecode(pushMap['t']!);
-            insert(Info(textMap['id']!, textMap['name']!, textMap['size']!,
-                textMap['id']!, 0));
+            insert(Info(textMap['id']!, textMap['name']!, textMap['size']!, textMap['id']!, 0));
             refresh();
             return;
           }
@@ -413,10 +416,9 @@ class _MyHomePageState extends State<MyHomePage> {
       wc.sink.add('开始订阅');
 
       // 生成网址二维码
-      httpRequest = await httpClient.get(
-          'localhost', httpPort, '/qrcode?name=http.jpg&text=$_gatewayAddress');
-      httpResponse = await httpRequest.close();
-      var qrcodePath = await httpResponse.transform(utf8.decoder).join();
+      var httpRequest = await httpClient.get('localhost', httpPort, '/qrcode?name=http.jpg&text=$_gatewayAddress');
+      var httpResponse = await httpRequest.close();
+      final qrcodePath = await httpResponse.transform(utf8.decoder).join();
       _qrcode = Image.file(
         File(qrcodePath),
         width: 128,
@@ -471,8 +473,7 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: Icon(Icons.copy_rounded),
             label: Text("复制网址"),
             onPressed: () {
-              FlutterClipboard.copy(_gatewayAddress)
-                  .then((value) => {EasyLoading.showToast('已经复制')});
+              FlutterClipboard.copy(_gatewayAddress).then((value) => {EasyLoading.showToast('已经复制')});
             },
           ),
           Padding(
