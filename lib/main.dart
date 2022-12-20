@@ -287,14 +287,14 @@ class _MyHomePageState extends State<MyHomePage> {
     httpClient.idleTimeout = Duration(seconds: 3);
     try {
       // 准备模板文件
-      var templateFile = File(join(rootDirectoryPath, 'template', 'index.html'));
-      if (templateFile.existsSync()) {
-        templateFile.deleteSync();
+      var templatePath = join(rootDirectoryPath, 'template', 'index.html');
+      if (FileSystemEntity.typeSync(templatePath) != FileSystemEntityType.notFound) {
+        File(templatePath).deleteSync();
       }
-      templateFile.createSync(recursive: true);
       var templateFileData = await rootBundle.load('service/template/index.html');
-      var templateFileDataBuffer = templateFileData.buffer;
-      templateFile.writeAsBytesSync(templateFileDataBuffer.asUint8List(templateFileData.offsetInBytes, templateFileData.lengthInBytes));
+      var templateFile = File(templatePath);
+      templateFile.createSync(recursive: true);
+      templateFile.writeAsBytesSync(templateFileData.buffer.asUint8List(templateFileData.offsetInBytes, templateFileData.lengthInBytes));
 
       // 准备服务文件
       l.fine('系统:${SysInfo.operatingSystemName}');
@@ -313,19 +313,19 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       }
       l.fine('服务文件名称 $serverFilename');
-      var serverFile = File(join(rootDirectoryPath, serverFilename));
-      if (serverFile.existsSync()) {
-        serverFile.deleteSync();
+      var httpServerApplicationPath = join(rootDirectoryPath, serverFilename);
+      if (FileSystemEntity.typeSync(httpServerApplicationPath) != FileSystemEntityType.notFound) {
+        File(httpServerApplicationPath).deleteSync();
       }
-      serverFile.createSync(recursive: true);
       var serverFileData = await rootBundle.load(join('service', serverFilename));
-      var serverFileDataBuffer = serverFileData.buffer;
-      serverFile.writeAsBytesSync(serverFileDataBuffer.asUint8List(serverFileData.offsetInBytes, serverFileData.lengthInBytes));
+      var httpServerApplicationFile = File(httpServerApplicationPath);
+      httpServerApplicationFile.createSync(recursive: true);
+      httpServerApplicationFile.writeAsBytesSync(serverFileData.buffer.asUint8List(serverFileData.offsetInBytes, serverFileData.lengthInBytes));
       // TODO 其它平台需要测试是否需要
       if (Platform.isLinux || Platform.isAndroid) {
         // Linux , Android平台授予执行权限
         l.fine('HTTP服务程序授予执行权限');
-        var result = await Process.run('chmod', ['+x', serverFile.path]);
+        var result = await Process.run('chmod', ['+x', httpServerApplicationPath]);
         l.fine('HTTP服务程序授予执行权限结果: ${result.stdout} ${result.stderr}');
       }
 
@@ -347,7 +347,7 @@ class _MyHomePageState extends State<MyHomePage> {
       l.fine('HTTP端口:$httpPort');
 
       // 启动HTTP服务
-      httpServerProcess = await Process.start(serverFile.path, ['--d=$rootDirectoryPath', '--p=$httpPort']);
+      httpServerProcess = await Process.start(httpServerApplicationPath, ['--d=$rootDirectoryPath', '--p=$httpPort']);
       httpServerProcess.stdout.transform(utf8.decoder).forEach((txt) {
         l.fine(txt);
       });
