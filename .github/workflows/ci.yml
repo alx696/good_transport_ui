@@ -145,7 +145,7 @@ jobs:
           flutter build windows --release
           mkdir _public
           mv build/windows/runner/Release _public/good-transport
-          mv sqlite3.dll _public/
+          mv sqlite3.dll _public/good-transport
           ls _public
 
       - name: zip
