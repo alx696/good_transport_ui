@@ -317,7 +317,7 @@ class _MyHomePageState extends State<MyHomePage> {
       if (FileSystemEntity.typeSync(httpServerApplicationPath) != FileSystemEntityType.notFound) {
         File(httpServerApplicationPath).deleteSync();
       }
-      var serverFileData = await rootBundle.load('service/$serverFilename');
+      var serverFileData = await rootBundle.load('service/$serverFilename'); // 注意: 不要用join, 在windows里面会因为斜杠问题无法加载!!!
       var httpServerApplicationFile = File(httpServerApplicationPath);
       httpServerApplicationFile.createSync(recursive: true);
       httpServerApplicationFile.writeAsBytesSync(serverFileData.buffer.asUint8List(serverFileData.offsetInBytes, serverFileData.lengthInBytes));
@@ -502,16 +502,16 @@ class _MyHomePageState extends State<MyHomePage> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: GestureDetector(
-              onTap: () {
+            child: IconButton(
+              icon: Icon(
+                Icons.exit_to_app,
+                size: 24,
+              ),
+              onPressed: () {
                 l.fine('点了退出');
                 // https://stackoverflow.com/questions/45109557/flutter-how-to-programmatically-exit-the-app
                 SystemChannels.platform.invokeMethod('SystemNavigator.pop');
               },
-              child: const Icon(
-                Icons.exit_to_app,
-                size: 24,
-              ),
             ),
           ),
         ],
