@@ -317,7 +317,7 @@ class _MyHomePageState extends State<MyHomePage> {
       if (FileSystemEntity.typeSync(httpServerApplicationPath) != FileSystemEntityType.notFound) {
         File(httpServerApplicationPath).deleteSync();
       }
-      var serverFileData = await rootBundle.load(join('service', serverFilename));
+      var serverFileData = await rootBundle.load('service/$serverFilename');
       var httpServerApplicationFile = File(httpServerApplicationPath);
       httpServerApplicationFile.createSync(recursive: true);
       httpServerApplicationFile.writeAsBytesSync(serverFileData.buffer.asUint8List(serverFileData.offsetInBytes, serverFileData.lengthInBytes));
