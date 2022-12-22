@@ -101,7 +101,6 @@ jobs:
           path: |
             C:\hostedtoolcache\windows\flutter
             C:\Users\runneradmin\.pub-cache
-          key: ${{ runner.os }}-cache
 
       - uses: subosito/flutter-action@v2
         with:
@@ -146,7 +145,7 @@ jobs:
           mkdir _public
           mv build/windows/runner/Debug _public/good-transport
           mv sqlite3.dll _public/good-transport
-          ls _public
+          ls _public/good-transport
 
       - name: zip
         uses: thedoctor0/zip-release@main
@@ -165,6 +164,6 @@ jobs:
 
       - uses: actions/upload-artifact@v3.0.0
         with:
-          name: windows.zip
+          name: windows
           path: _public/good-transport-windows.zip
           if-no-files-found: error
