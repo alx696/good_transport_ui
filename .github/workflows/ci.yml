@@ -148,12 +148,12 @@ jobs:
           mv sqlite3.dll _public/good-transport
           ls _public/good-transport
 
-      - name: zip
-        uses: thedoctor0/zip-release@main
-        with:
-          directory: '_public'
-          type: 'zip'
-          filename: 'good-transport-windows.zip'
+      #      - name: zip
+      #        uses: thedoctor0/zip-release@main
+      #        with:
+      #          directory: '_public'
+      #          type: 'zip'
+      #          filename: 'good-transport-windows.zip'
 
       #      - name: publish
       #        uses: svenstaro/upload-release-action@v2
@@ -166,5 +166,5 @@ jobs:
       - uses: actions/upload-artifact@v3.0.0
         with:
           name: windows
-          path: _public/good-transport-windows.zip
+          path: _public/good-transport
           if-no-files-found: error
