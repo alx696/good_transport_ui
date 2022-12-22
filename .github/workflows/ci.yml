@@ -101,6 +101,7 @@ jobs:
           path: |
             C:\hostedtoolcache\windows\flutter
             C:\Users\runneradmin\.pub-cache
+          key: ${{ runner.os }}-flutter
 
       - uses: subosito/flutter-action@v2
         with:
