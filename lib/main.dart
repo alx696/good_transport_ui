@@ -528,8 +528,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 l.fine('点了退出');
                 _destroy();
 
-                // https://stackoverflow.com/questions/45109557/flutter-how-to-programmatically-exit-the-app
-                SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+                if (Platform.isWindows) {
+                  exit(0);
+                } else {
+                  // https://stackoverflow.com/questions/45109557/flutter-how-to-programmatically-exit-the-app
+                  SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+                }
               },
             ),
           ),

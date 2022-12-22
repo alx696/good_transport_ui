@@ -116,6 +116,7 @@ bool Win32Window::CreateAndShow(const std::wstring& title,
   UINT dpi = FlutterDesktopGetDpiForMonitor(monitor);
   double scale_factor = dpi / 96.0;
 
+  // WS_OVERLAPPEDWINDOW 换成 WS_THICKFRAME 之后可以隐藏窗口本身的三个控制图标.
   HWND window = CreateWindow(
       window_class, title.c_str(), WS_THICKFRAME | WS_VISIBLE,
       Scale(origin.x, scale_factor), Scale(origin.y, scale_factor),
