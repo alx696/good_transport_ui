@@ -106,7 +106,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // 删除数据
     delete(uuid);
     // 刷新数据
-    refresh();
+    _refresh();
   }
 
   // 复制文本
@@ -258,7 +258,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Future refresh() async {
+  Future _refresh() async {
     List<Info> dataList = await all();
     _cardList = generateCardList(directoryPath: rootDirectoryPath, data: dataList);
     setState(() {
@@ -266,7 +266,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Future init() async {
+  Future _init() async {
     // 准备数据文件夹
     Directory documentDirectory = await getApplicationDocumentsDirectory();
     rootDirectoryPath = join(documentDirectory.path, '里路好传');
@@ -281,7 +281,7 @@ class _MyHomePageState extends State<MyHomePage> {
     await initDb(directoryPath: rootDirectoryPath);
 
     // 首次加载
-    refresh();
+    _refresh();
 
     var httpClient = HttpClient();
     httpClient.idleTimeout = Duration(seconds: 3);
@@ -387,21 +387,21 @@ class _MyHomePageState extends State<MyHomePage> {
             String txt = textMap['text'];
             var txtLength = txt.length;
             insert(Info(textMap['id']!, txt, txtLength, '', txtLength));
-            refresh();
+            _refresh();
             return;
           }
 
           if (pushMap['c'] == '上传开始') {
             Map<String, dynamic> textMap = jsonDecode(pushMap['t']!);
             insert(Info(textMap['id']!, textMap['name']!, textMap['size']!, textMap['id']!, 0));
-            refresh();
+            _refresh();
             return;
           }
 
           if (pushMap['c'] == '上传进度') {
             Map<String, dynamic> textMap = jsonDecode(pushMap['t']!);
             updateReceiveSize(textMap['id']!, textMap['size']!);
-            refresh();
+            _refresh();
             return;
           }
         },
@@ -440,11 +440,21 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  _destroy() {
+    try {
+      httpServerProcess.kill();
+      wc.sink.close();
+      closeDb();
+    } catch (e) {
+      //
+    }
+  }
+
   @override
   void initState() {
     super.initState();
 
-    init();
+    _init();
   }
 
   @override
@@ -509,8 +519,13 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               onPressed: () {
                 l.fine('点了退出');
-                // https://stackoverflow.com/questions/45109557/flutter-how-to-programmatically-exit-the-app
-                SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+                if (Platform.isWindows) {
+                  exit(0);
+                } else {
+                  // https://stackoverflow.com/questions/45109557/flutter-how-to-programmatically-exit-the-app
+                  SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+                }
+                _destroy();
               },
             ),
           ),
@@ -536,10 +551,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void dispose() {
-    l.fine('销毁');
-    httpServerProcess.kill();
-    wc.sink.close();
-    closeDb();
+    _destroy();
     super.dispose();
   }
 }
