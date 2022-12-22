@@ -142,9 +142,9 @@ jobs:
       - name: build
         run: |
           echo "构建Windows"
-          flutter build windows --debug
+          flutter build windows --release
           mkdir _public
-          mv build/windows/runner/Debug _public/good-transport
+          mv build/windows/runner/Release _public/good-transport
           mv sqlite3.dll _public/good-transport
           ls _public/good-transport
 
