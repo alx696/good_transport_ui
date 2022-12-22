@@ -18,6 +18,7 @@ import 'package:system_info2/system_info2.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 // TODO dpad_container 初步支持了电视遥控, 但是效果不理想, 比如获得焦点后没有高亮效果.
+// TODO Windows中点击窗口关闭图标关闭时http服务进程没有终止, 再次启动时会报错! dispose() 从来都不会执行!
 
 final l = Logger('调试');
 const title = '里路好传';
@@ -45,7 +46,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: const MyHomePage(title: title),
+      home: MyHomePage(title: title),
       builder: EasyLoading.init(),
     );
   }
@@ -266,6 +267,21 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  Future<String> _getHttpServerAddress(HttpClient httpClient, int httpPort) async {
+    // 间隔1秒连接1次直到连接成功
+    try {
+      var httpRequest = await httpClient.get('localhost', httpPort, '/server/info');
+      var httpResponse = await httpRequest.close();
+      if (httpResponse.statusCode == 200) {
+        final serverInfoMap = jsonDecode(await httpResponse.transform(utf8.decoder).join());
+        return serverInfoMap['http_address'];
+      }
+    } catch (e) {
+      //
+    }
+    return "";
+  }
+
   Future _init() async {
     // 准备数据文件夹
     Directory documentDirectory = await getApplicationDocumentsDirectory();
@@ -356,21 +372,11 @@ class _MyHomePageState extends State<MyHomePage> {
       });
 
       // 获取服务信息
-      String httpAddress = '';
+      String httpAddress = await _getHttpServerAddress(httpClient, httpPort);
+      // 间隔1秒连接1次直到连接成功
       while (httpAddress == '') {
-        // 间隔1秒连接1次直到连接成功
-        try {
-          var httpRequest = await httpClient.get('localhost', httpPort, '/server/info');
-          var httpResponse = await httpRequest.close();
-          if (httpResponse.statusCode == 200) {
-            final serverInfoMap = jsonDecode(await httpResponse.transform(utf8.decoder).join());
-            httpAddress = serverInfoMap['http_address'];
-          }
-        } catch (e) {
-          l.warning('获取服务器信息', e);
-
-          await Future.delayed(Duration(seconds: 1));
-        }
+        await Future.delayed(Duration(seconds: 1));
+        httpAddress = await _getHttpServerAddress(httpClient, httpPort);
       }
       l.fine('HTTP地址:$httpAddress');
       _gatewayAddress = 'http://$httpAddress';
@@ -441,6 +447,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   _destroy() {
+    l.fine('销毁资源');
     try {
       httpServerProcess.kill();
       wc.sink.close();
@@ -519,13 +526,10 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               onPressed: () {
                 l.fine('点了退出');
-                if (Platform.isWindows) {
-                  exit(0);
-                } else {
-                  // https://stackoverflow.com/questions/45109557/flutter-how-to-programmatically-exit-the-app
-                  SystemChannels.platform.invokeMethod('SystemNavigator.pop');
-                }
                 _destroy();
+
+                // https://stackoverflow.com/questions/45109557/flutter-how-to-programmatically-exit-the-app
+                SystemChannels.platform.invokeMethod('SystemNavigator.pop');
               },
             ),
           ),
@@ -547,11 +551,5 @@ class _MyHomePageState extends State<MyHomePage> {
         },
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _destroy();
-    super.dispose();
   }
 }
