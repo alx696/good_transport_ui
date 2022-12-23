@@ -126,7 +126,7 @@ bool Win32Window::CreateAndShow(const std::wstring& title,
   UINT windowOriginX = (scrWidth - windowWidth) / 2;//窗口原点X坐标
   UINT windowOriginY = (scrHeight - windowHeight) / 2;//窗口原点y坐标
   HWND window = CreateWindow(
-      window_class, title.c_str(), WS_THICKFRAME | WS_VISIBLE,
+      window_class, title.c_str(), WS_OVERLAPPED | WS_MINIMIZEBOX | WS_VISIBLE,
       windowOriginX,windowOriginY,windowWidth,windowHeight,
       nullptr, nullptr, GetModuleHandle(nullptr), this);
 
