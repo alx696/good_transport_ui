@@ -116,11 +116,18 @@ bool Win32Window::CreateAndShow(const std::wstring& title,
   UINT dpi = FlutterDesktopGetDpiForMonitor(monitor);
   double scale_factor = dpi / 96.0;
 
-  // WS_OVERLAPPEDWINDOW 换成 WS_THICKFRAME 之后可以隐藏窗口本身的三个控制图标.
+  // 隐藏窗口标题栏的控制图标
+  // WS_OVERLAPPEDWINDOW 换成 WS_THICKFRAME 之后可以隐藏3个控制图标.
+  // 窗口居中
+  UINT scrWidth = GetSystemMetrics(SM_CXFULLSCREEN);//屏幕宽度
+  UINT scrHeight = GetSystemMetrics(SM_CYFULLSCREEN);//屏幕高度
+  UINT windowWidth = Scale(size.width, scale_factor);//缩放后的窗口宽度
+  UINT windowHeight = Scale(size.height, scale_factor);//缩放后的窗口高度
+  UINT windowOriginX = (scrWidth - windowWidth) / 2;//窗口原点X坐标
+  UINT windowOriginY = (scrHeight - windowHeight) / 2;//窗口原点y坐标
   HWND window = CreateWindow(
       window_class, title.c_str(), WS_THICKFRAME | WS_VISIBLE,
-      Scale(origin.x, scale_factor), Scale(origin.y, scale_factor),
-      Scale(size.width, scale_factor), Scale(size.height, scale_factor),
+      windowOriginX,windowOriginY,windowWidth,windowHeight,
       nullptr, nullptr, GetModuleHandle(nullptr), this);
 
   if (!window) {
