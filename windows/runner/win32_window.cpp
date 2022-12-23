@@ -147,7 +147,7 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
     SetWindowLongPtr(window, GWLP_USERDATA,
                      reinterpret_cast<LONG_PTR>(window_struct->lpCreateParams));
     // 启用下行可以隐藏标题栏
-    SetWindowLong(window, GWL_STYLE, WS_OVERLAPPED);
+    // SetWindowLong(window, GWL_STYLE, WS_OVERLAPPED);
 
     auto that = static_cast<Win32Window*>(window_struct->lpCreateParams);
     EnableFullDpiSupportIfAvailable(window);
