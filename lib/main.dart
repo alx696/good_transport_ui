@@ -79,6 +79,17 @@ class _MyHomePageState extends State<MyHomePage> {
     return await platform.invokeMethod('getDirectory');
   }
 
+  // 调用原生功能获取公共下载文件夹
+  Future<String> _getPublicDownloadDirectory() async {
+    return await platform.invokeMethod('getPublicDownloadDirectory');
+  }
+
+  // 调用原生功能获取存储权限
+  Future<bool> _getStoragePermission() async {
+    String result = await platform.invokeMethod('requestStoragePermission');
+    return result == "已有权限";
+  }
+
   // 调用原生功能打开文件
   Future _platformOpenFile(String filePath) async {
     await platform.invokeMethod('open', {
@@ -96,6 +107,24 @@ class _MyHomePageState extends State<MyHomePage> {
     OpenAppFile.open(filePath).then((result) {
       l.fine('打开结果 ${result.message}');
     });
+  }
+
+  // 复制到下载
+  Future _copyToDownload(String filePath, String fileName) async {
+    if (!Platform.isAndroid) {
+      l.warning('暂时只支持Android使用此功能');
+      return;
+    }
+    // 检查权限
+    bool havePermission = await _getStoragePermission();
+    if (!havePermission) {
+      EasyLoading.showToast('没有存储权限');
+      return;
+    }
+    // 复制文件
+    String downloadDirectory = await _getPublicDownloadDirectory();
+    File(filePath).copySync(join(downloadDirectory, fileName));
+    EasyLoading.showToast('已经复制到下载文件夹中');
   }
 
   // 删除Card
@@ -164,6 +193,32 @@ class _MyHomePageState extends State<MyHomePage> {
             },
           ),
         );
+        // 显示复制到下载按钮
+        if (Platform.isAndroid) {
+          // 添加间距空间
+          actionArray.add(
+            SizedBox(width: 8),
+          );
+
+          String fileName = info.txt;
+          actionArray.add(
+            DpadContainer(
+              child: ElevatedButton.icon(
+                icon: Icon(Icons.file_copy),
+                label: Text('复到下载'),
+                onPressed: () {
+                  _copyToDownload(filePath, fileName);
+                },
+              ),
+              onClick: () {
+                _copyToDownload(filePath, fileName);
+              },
+              onFocus: (hasFocus) {
+                l.fine('焦点变化: $hasFocus');
+              },
+            ),
+          );
+        }
       } else {
         // 显示复制按钮
         actionArray.add(
@@ -223,9 +278,9 @@ class _MyHomePageState extends State<MyHomePage> {
               subtitle: Text(sizeText),
             ),
             Padding(
-              padding: EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+              padding: EdgeInsets.only(bottom: 16),
+              child: Wrap(
+                alignment: WrapAlignment.end,
                 children: actionArray,
               ),
             ),

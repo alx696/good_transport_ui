@@ -95,6 +95,10 @@ android {
 }
 
 dependencies {
+    implementation 'androidx.appcompat:appcompat:1.5.1'
+    implementation 'com.google.android.material:material:1.7.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
     // 版本5等老系统中提供 java.util.concurrent.CompletableFuture 支持 (java9.util.concurrent.CompletableFuture)
     implementation 'net.sourceforge.streamsupport:android-retrofuture:1.7.3'
 }
