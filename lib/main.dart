@@ -174,7 +174,18 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
         );
-      } else if (filePath != '') {
+      } else {
+        // 撑开宽度
+        actionArray.add(
+          Expanded(
+            child: Container(
+              color: Colors.green,
+            ),
+          ),
+        );
+      }
+
+      if (filePath != '') {
         // 显示打开按钮
         actionArray.add(
           DpadContainer(
@@ -195,11 +206,6 @@ class _MyHomePageState extends State<MyHomePage> {
         );
         // 显示复制到下载按钮
         if (Platform.isAndroid) {
-          // 添加间距空间
-          actionArray.add(
-            SizedBox(width: 8),
-          );
-
           String fileName = info.txt;
           actionArray.add(
             DpadContainer(
@@ -240,11 +246,6 @@ class _MyHomePageState extends State<MyHomePage> {
         );
       }
 
-      // 添加间距空间
-      actionArray.add(
-        SizedBox(width: 8),
-      );
-
       // 添加删除按钮
       actionArray.add(
         DpadContainer(
@@ -264,29 +265,33 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       );
 
-      cardArray.add(Card(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(typeIcon),
-              title: Text(
-                info.txt,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+      cardArray.add(
+        Card(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(typeIcon),
+                title: Text(
+                  info.txt,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(sizeText),
               ),
-              subtitle: Text(sizeText),
-            ),
-            Padding(
-              padding: EdgeInsets.only(bottom: 16),
-              child: Wrap(
-                alignment: WrapAlignment.end,
-                children: actionArray,
+              Padding(
+                padding: EdgeInsets.all(16),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.end,
+                  children: actionArray,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ));
+      );
     }
     return cardArray;
   }
