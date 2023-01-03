@@ -8,90 +8,88 @@ name: Action
 
 on:
   push:
-#    branches: [ main ]
     tags:
       - 'v*'
 
 jobs:
-    build-linux_android:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/setup-java@v3
-          with:
-            java-version: '11'
-            distribution: 'temurin'
-            # cache: 'gradle'
+  build-linux_android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          # cache: 'gradle'
 
-        - name: check-java
-          run: java --version
+      - name: check-java
+        run: java --version
 
-        - id: ndk
-          uses: nttld/setup-ndk@v1
-          with:
-            ndk-version: r20b
-            add-to-path: true
+      - uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r20b
+          add-to-path: true
 
-        - uses: subosito/flutter-action@v2
-          with:
-            channel: 'stable'
-            flutter-version: '3.3'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.3'
 
-        - name: check-flutter
-          run: |
-            sudo apt-get update -y
-            sudo apt-get install -y ninja-build libgtk-3-dev
-            flutter --version
+      - name: check-flutter
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ninja-build libgtk-3-dev
+          flutter --version
 
-        - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-        - name: prepare-resource
-          run: |
-            mkdir gts
-            cd gts
-            wget https://github.com/alx696/good-transport-server/releases/download/v1.0/gts-android_arm64
-            wget https://github.com/alx696/good-transport-server/releases/download/v1.0/gts-linux-64
-            ls
-            cd ..
-            cd service
-            wget https://github.com/alx696/good-transport-server/releases/download/v1.0/template.tar.gz
-            tar zxf template.tar.gz
-            rm template.tar.gz
-            ls
-            cd ..
-            echo "恢复密钥"
-            echo "${{ secrets.ANDROID_JKS_GPG }}" | tee android/app/lilu.red.jks.asc
-            gpg -d --passphrase "${{ secrets.ANDROID_JKS_GPG_PASSWORD }}" --batch android/app/lilu.red.jks.asc > android/app/lilu.red.jks
-            sha256sum android/app/lilu.red.jks
+      - name: prepare-resource
+        run: |
+          mkdir gts
+          cd gts
+          wget https://github.com/alx696/good-transport-server/releases/download/v1.0/gts-android_arm64
+          wget https://github.com/alx696/good-transport-server/releases/download/v1.0/gts-linux-64
+          ls
+          cd ..
+          cd service
+          wget https://github.com/alx696/good-transport-server/releases/download/v1.0/template.tar.gz
+          tar zxf template.tar.gz
+          rm template.tar.gz
+          ls
+          cd ..
+          echo "恢复密钥"
+          echo "${{ secrets.ANDROID_JKS_GPG }}" | tee android/app/lilu.red.jks.asc
+          gpg -d --passphrase "${{ secrets.ANDROID_JKS_GPG_PASSWORD }}" --batch android/app/lilu.red.jks.asc > android/app/lilu.red.jks
+          sha256sum android/app/lilu.red.jks
 
-        - name: build
-          env:
-            ANDROID_NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
-            ANDROID_JKS_KEY_PASSWORD: ${{ secrets.ANDROID_JKS_KEY_PASSWORD }}
-            ANDROID_JKS_STORE_PASSWORD: ${{ secrets.ANDROID_JKS_STORE_PASSWORD }}
-          run: |
-            echo "构建Linux"
-            mv gts/gts-linux-64 service/
-            flutter build linux --release
-            mv build/linux/x64/release/bundle good-transport
-            tar zcf good-transport-ubuntu.tar.gz good-transport
-            rm -rf good-transport
-            rm service/gts-linux-64
-            mkdir _public
-            mv good-transport-ubuntu.tar.gz _public
-            echo "构建Android"
-            mv gts/gts-android_arm64 service/
-            flutter build apk --release
-            mv build/app/outputs/flutter-apk/app-release.apk _public/good-transport.apk
-            echo "列出即将发布内容"
-            ls _public
+      - name: build
+        env:
+          ANDROID_NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+          ANDROID_JKS_KEY_PASSWORD: ${{ secrets.ANDROID_JKS_KEY_PASSWORD }}
+          ANDROID_JKS_STORE_PASSWORD: ${{ secrets.ANDROID_JKS_STORE_PASSWORD }}
+        run: |
+          echo "构建Linux"
+          mv gts/gts-linux-64 service/
+          flutter build linux --release
+          mv build/linux/x64/release/bundle good-transport
+          tar zcf good-transport-ubuntu.tar.gz good-transport
+          rm -rf good-transport
+          rm service/gts-linux-64
+          mkdir _public
+          mv good-transport-ubuntu.tar.gz _public
+          echo "构建Android"
+          mv gts/gts-android_arm64 service/
+          flutter build apk --release
+          mv build/app/outputs/flutter-apk/app-release.apk _public/good-transport.apk
+          echo "列出即将发布内容"
+          ls _public
 
-        - name: publish
-          uses: svenstaro/upload-release-action@v2
-          with:
-            file_glob: true
-            file: _public/*
-            overwrite: true
-            body: "里路好传应用, 目前支持Ubuntu, Windows, Android. 访问 https://lilu.red 探索更多有趣的技术."
+      - name: publish
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file_glob: true
+          file: _public/*
+          overwrite: true
+          body: "里路好传应用, 目前支持Ubuntu, Windows, Android. 访问 https://lilu.red 探索更多有趣的技术."
 
   build-windows:
     runs-on: windows-latest
