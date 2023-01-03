@@ -178,8 +178,8 @@ class _MyHomePageState extends State<MyHomePage> {
         // 撑开宽度
         actionArray.add(
           Expanded(
-            child: Container(
-              color: Colors.green,
+            child: Divider(
+                color: Colors.grey
             ),
           ),
         );
