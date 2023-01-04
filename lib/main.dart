@@ -161,30 +161,22 @@ class _MyHomePageState extends State<MyHomePage> {
         sizeText = '${filesize(info.size)}大小';
       }
 
-      var actionArray = <Widget>[];
+      Widget progressView = LinearProgressIndicator(
+        value: 100,
+        valueColor: AlwaysStoppedAnimation(Colors.white),
+        backgroundColor: Colors.orange.shade200,
+      );
       if (info.size != info.receiveSize) {
         // 显示进度条
         var progress = info.receiveSize / info.size;
-        actionArray.add(
-          Expanded(
-            child: LinearProgressIndicator(
-              value: progress,
-              valueColor: AlwaysStoppedAnimation(Colors.blue),
-              backgroundColor: Colors.orange.shade200,
-            ),
-          ),
-        );
-      } else {
-        // 撑开宽度
-        actionArray.add(
-          Expanded(
-            child: Divider(
-                color: Colors.grey
-            ),
-          ),
+        progressView = LinearProgressIndicator(
+          value: progress,
+          valueColor: AlwaysStoppedAnimation(Colors.blue),
+          backgroundColor: Colors.orange.shade200,
         );
       }
 
+      var actionArray = <Widget>[];
       if (filePath != '') {
         // 显示打开按钮
         actionArray.add(
@@ -268,7 +260,6 @@ class _MyHomePageState extends State<MyHomePage> {
       cardArray.add(
         Card(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
                 leading: Icon(typeIcon),
@@ -279,8 +270,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 subtitle: Text(sizeText),
               ),
-              Padding(
+              progressView,
+              Container(
                 padding: EdgeInsets.all(16),
+                width: double.infinity,
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
