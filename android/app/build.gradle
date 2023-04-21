@@ -38,14 +38,14 @@ apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
-    compileSdkVersion 32
-    ndkVersion "21.4.7075529"
+    compileSdkVersion 33
+    ndkVersion "25.2.9519653"
 
     defaultConfig {
         applicationId "red.lilu.app.good_transport"
         minSdkVersion 21
         // 设置到30及以上时Golang会出网络异常 https://github.com/ipfs-shipyard/gomobile-ipfs/issues/68
-        targetSdkVersion 28
+        targetSdkVersion 31
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
