@@ -320,19 +320,17 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Future<String> _getHttpServerAddress(HttpClient httpClient, int httpPort) async {
-    // 间隔1秒连接1次直到连接成功
+  Future<bool> _httpServerOk(HttpClient httpClient, int httpPort) async {
     try {
-      var httpRequest = await httpClient.get('localhost', httpPort, '/server/info');
+      var httpRequest = await httpClient.get('localhost', httpPort, '/');
       var httpResponse = await httpRequest.close();
       if (httpResponse.statusCode == 200) {
-        final serverInfoMap = jsonDecode(await httpResponse.transform(utf8.decoder).join());
-        return serverInfoMap['http_address'];
+        return true;
       }
     } catch (e) {
       //
     }
-    return "";
+    return false;
   }
 
   Future _init() async {
@@ -460,15 +458,12 @@ class _MyHomePageState extends State<MyHomePage> {
         l.warning(txt);
       });
 
-      // 获取服务信息
-      // String httpAddress = await _getHttpServerAddress(httpClient, httpPort);
-      // // 间隔1秒连接1次直到连接成功
-      // while (httpAddress == '') {
-      //   await Future.delayed(Duration(seconds: 1));
-      //   httpAddress = await _getHttpServerAddress(httpClient, httpPort);
-      // }
+      // 等待HTTP服务就绪(间隔1秒连接1次直到连接成功)
+      while (!await _httpServerOk(httpClient, httpPort)) {
+        await Future.delayed(Duration(seconds: 1));
+      }
       String httpAddress = '$ip:$httpPort';
-      l.fine('HTTP地址:$httpAddress');
+      l.fine('HTTP服务地址:$httpAddress');
       _gatewayAddress = 'http://$httpAddress';
 
       // 订阅 https://flutter.cn/docs/cookbook/networking/web-sockets
